@@ -5,3 +5,50 @@ date: "12/10/2020"
 output: github_document
 ---
 
+```{r}
+
+library(tidyverse)
+library(p8105.datasets)
+library(janitor)
+
+```
+
+## Instacart data
+
+Load and explore data
+
+```{r}
+
+data("instacart") %>% tidy_names()
+
+dim(instacart)
+
+```
+
+The "Instacart" data consist of 1384617 observations for 15 variables. The variables are as follows:
+
+* `order_id`: order identifier
+* `product_id`: product identifier
+* `add_to_cart_order`: order in which each product was added to cart
+* `reordered`: 1 if this product has been ordered by this user in the past, 0 otherwise
+* `user_id`: customer identifier
+* `order_number`: the order sequence number for this user (1=first, n=nth)
+* `order_dow`: the day of the week on which the order was placed
+* `order_hour_of_day`: the hour of the day on which the order was placed
+* `days_since_prior_order`: days since the last order, capped at 30, NA if order_number=1
+* `product_name`: name of the product
+* `aisle_id:` aisle identifier
+* `department_id`: department identifier
+* `aisle`: the name of the aisle
+* `department`: the name of the department
+
+Here is a random observation from the data set as an example:
+
+```{r}
+
+instacart[61,]
+
+```
+
+This observation refers to organic garlic (produce department, fresh vegetables aisle) that was the 29th item to be added to cart on Tuesday at 8:00 as part of order #98 by user #56463. This user has ordered 40 times previously, they placed their previoous order 14 days prior to this one, and they have ordered this item before.
+
