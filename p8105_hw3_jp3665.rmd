@@ -10,6 +10,7 @@ output: github_document
 library(tidyverse)
 library(p8105.datasets)
 library(janitor)
+library(knitr)
 
 ```
 
@@ -51,4 +52,72 @@ instacart[61,]
 ```
 
 This observation refers to organic garlic (produce department, fresh vegetables aisle) that was the 29th item to be added to cart on Tuesday at 8:00 as part of order #98 by user #56463. This user has ordered 40 times previously, they placed their previoous order 14 days prior to this one, and they have ordered this item before.
+
+```{r}
+
+instacart %>% count(aisle) %>% nrow()
+
+instacart %>% count(aisle) %>% arrange(desc(n)) %>% head() %>% knitr::kable()
+
+```
+
+There are 134 unique aisles defined in this data set. This table demonstrates that the most items are ordered from the fresh vegetables and fresh fruits aisles.
+
+Plot the number of items ordered from each isle for aisles with >10k items ordered.
+
+```{r}
+
+instacart %>% 
+  count(aisle) %>%
+  mutate(aisle = fct_reorder(aisle, n)) %>%
+  filter(n > 10000) %>% 
+  ggplot(aes(x = aisle, y = n)) +
+  geom_bar(stat = "identity") +
+  theme(
+    axis.text.x = element_text(angle = 90)
+  ) +
+  xlab("Aisle") +
+  ylab("Number of items") +
+  ggtitle("Number of items ordered for each aisle")
+  
+
+```
+
+Make a tablee showing the three most popular items in each of the following: baking ingredients, dog food care,  and packaged vegetables fruits.
+
+```{r}
+
+instacart %>%
+  select(product_name, aisle) %>%
+  filter(aisle %in% c("baking ingredients", "dog food care", "packaged vegetables fruits")) %>%
+  group_by(aisle) %>%
+  count(product_name) %>%
+  top_n(3) %>%
+  knitr::kable()
+
+```
+
+
+Make a table showing the mean hour of the day that Pink Lady Apples and Coffee Ice Cream are ordered on each day of the week.
+
+```{r}
+
+instacart %>%
+  select(product_name, order_hour_of_day, order_dow) %>%
+  filter(product_name %in% c("Pink Lady Apples", "Coffee Ice Cream")) %>%
+  group_by(product_name, order_dow) %>%
+  summarize(mean(order_hour_of_day)) %>%
+  spread(order_dow, "mean(order_hour_of_day)") %>%
+  rename(
+    sunday = "0",
+    monday = "1",
+    tuesday = "2",
+    wednesday = "3",
+    thursday = "4",
+    friday = "5",
+    saturday = "6"
+  ) %>%
+  knitr::kable()
+
+```
 
