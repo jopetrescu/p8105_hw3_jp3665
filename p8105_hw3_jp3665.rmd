@@ -11,6 +11,7 @@ library(tidyverse)
 library(p8105.datasets)
 library(janitor)
 library(knitr)
+library(gridExtra)
 
 ```
 
@@ -118,6 +119,130 @@ instacart %>%
     saturday = "6"
   ) %>%
   knitr::kable()
+
+```
+
+## Accelerometer data
+
+This data set consists of accelerometer measurements collected over 5 weeks from a 63 year old male w/ BMI 25 who was admitted to the Advanced Cardiac Care Center at CUMC and diagnosed with CHF. The `activity.*` variables are activity counts for each minute of 24-hour day.
+
+Load and tidy data. The final dataset includes
+
+```{r}
+
+accel_data <- read.csv("./data/accel_data.csv") %>%
+  tidy_names() %>%
+  mutate(
+    weekend = as.logical(day %in% c("Saturday", "Sunday"))
+  )
+
+accel_data$weekend
+
+activity_cols <- accel_data[,grepl("activity", names(accel_data))]
+
+accel_data %>%
+  mutate(
+    total_activity = activity_cols %>% rowSums(na.rm = TRUE)
+) %>%
+  select(week, day_id, day, weekend, total_activity) %>%
+  knitr::kable()
+
+
+
+```
+
+It seems that the days with the lowest total activity are weekends.
+
+```{r}
+
+accel_data %>% 
+  gather("minute", "activity", 4:1443) %>%
+  ggplot(aes(x = minute, y = activity)) +
+           geom_line(aes(color = day)) +
+  theme(axis.text.x = element_blank(),
+        axis.ticks.x=element_blank())
+  
+
+```
+
+From this plot, it actually appears that the most activity is in the morning and in the evening and that the subject had the most activity on Saturdays and Sundays and the least on Wednesdays.
+
+## Weather data
+
+Load and tidy data, make temperature values in degrees and precipitation values in mm. The original data has 2595176 observations of 7 variables including station ID, date, precipitation, snowfall, max temp, min temp. There are 3387623 NA values which suggests there is a lot of missing data.
+
+```{r}
+
+data("ny_noaa")
+
+ny_noaa %>% is.na() %>% sum()
+
+weather_data <- ny_noaa %>%
+  mutate(year = lubridate::year(date), 
+         month = lubridate::month(date), 
+         day = lubridate::day(date),
+         tmin = as.numeric(tmin) / 10,
+         tmax = as.numeric(tmax) / 10,
+         prcp = as.numeric(prcp) / 10)
+
+weather_data %>% count(snow) %>% arrange(desc(n))
+
+```
+
+The most commonly observed values for snowfall are 0 and NA because it does not snow most days and there must be some inconsistencies with data entry (0 vs. NA).
+
+Plot maximum temperatures for each station in January and July across years.
+
+```{r}
+
+p1 <- weather_data %>% 
+  filter(month == "1") %>%
+  select(id, tmax, date, year, month) %>%
+  drop_na() %>%
+  group_by(id) %>%
+  ggplot(aes(x = date, y = tmax)) +
+  geom_line(aes(color = id)) +
+  theme(legend.position = "none") +
+  ggtitle("Max temp in January (degrees)")
+
+p2 <-  weather_data %>% 
+  filter(month == "7") %>%
+  select(id, tmax, date, year, month) %>%
+  drop_na() %>%
+  group_by(id) %>%
+  ggplot(aes(x = date, y = tmax)) +
+  geom_line(aes(color = id)) +
+  theme(legend.position = "none") +
+  ggtitle("Max temp in July (degrees)")
+
+grid.arrange(p1, p2, ncol=2)
+
+```
+There is no obvious change over these years in maximum temperature although it does tend to fluctuate over time. Years 2005 and 1995 seem to be outliers of high temp in January and 1989, 1991, 2000, and 2006 seem to be outliers of low temps in July.
+
+Make a plot showing maximum vs. minimum temperatures for the full dataset.
+
+```{r}
+
+p3 <- weather_data %>% 
+  select(id, tmax, tmin, date, year, month) %>%
+  ggplot(aes(x = date)) +
+  geom_line(aes(x = date, y = tmax, color = "red")) +
+  geom_line(aes(x = date, y = tmin, color = "blue")) +
+  theme(legend.position = "none") +
+  ggtitle("Max and min temp (degrees)")
+
+p4 <- weather_data %>%
+  select(year, snow) %>%
+  filter(snow == (0:100)) %>%
+  ggplot(aes(x = factor(year), y = snow)) +
+  geom_violin() +
+  theme(
+    axis.text.x = element_text(angle = 90)
+  ) +
+  ggtitle("Snowfall by year (mm)")
+
+grid.arrange(p3, p4, ncol=2)
 
 ```
 
